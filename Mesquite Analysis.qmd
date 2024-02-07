@@ -1,0 +1,559 @@
+---
+title: "Mesquite Analysis"
+format: html
+editor: visual
+---
+
+# **\*\*IRGA DATA**
+
+### Load Libraries
+
+```{r}
+library(tidyverse)
+library(lattice)
+library(car)
+library(scales)
+```
+
+## DATA CLEANUP
+
+```{r}
+#load and select data
+data.irga <- read.csv("GDE_IRGA.csv")
+
+str(data.irga)
+
+data.irga$Site <- as.factor(data.irga$Site)
+data.irga$TreeID <- as.factor(data.irga$TreeID)
+
+data.irga <- data.irga %>% subset(Ci > 0)
+
+data.irga.meta <- data.irga %>%
+  select(1:2) %>%
+  group_by(TreeID) %>%
+  unique() %>%
+  ungroup()
+```
+
+### Calculating Means
+
+```{r}
+#CALCULATE AVG PHOTOSYNTHETIC RATE AND STOMATAL CONDUCTANCE FOR EACH TREE AND JOIN GAS EXCHANGE WITH METADATA
+data.irga.indiv <- data.irga %>% group_by(TreeID) %>% 
+  summarise(Photo = mean(Photo), 
+            Cond = mean(Cond),
+            WUE = mean(Photo/Cond),
+            Count = n()) %>% 
+  ungroup() %>%
+  merge(data.irga.meta,
+        by = "TreeID",
+        all.x = TRUE)
+```
+
+### Log Transformations
+
+```{r}
+#LOG TRANSFORMATIONS
+data.irga.indiv$lnPhoto <- log(data.irga.indiv$Photo)
+data.irga.indiv$lnCond <- log(data.irga.indiv$Cond)
+data.irga.indiv$lnWUE <- log(data.irga.indiv$WUE)
+```
+
+### Check Normality
+
+```{r}
+#HISTOGRAM: RAW DATA VS LOG DATA
+histogram(data.irga.indiv$Photo)
+histogram(data.irga.indiv$lnPhoto)
+
+histogram(data.irga.indiv$Cond)
+histogram(data.irga.indiv$lnCond)
+
+histogram(data.irga.indiv$WUE)
+histogram(data.irga.indiv$lnWUE)
+```
+
+### Calculating Standard Error
+
+```{r}
+#CALCULATE MEAN AND STANDARD ERROR
+data.irga.sum <- data.irga.indiv %>% group_by (Site) %>% 
+  summarise(meanPhoto = mean(Photo), 
+            sePhoto = sd(Photo)/sqrt(length(Photo)), 
+            meanCond = mean(Cond), 
+            seCond = sd(Cond)/sqrt(length(Cond)), 
+            meanWUE = mean(WUE), 
+            seWUE = sd(WUE)/sqrt(length(WUE)), 
+  ) %>% ungroup()
+```
+
+## GRAPHS
+
+### Photosynthetic Rate
+
+```{r}
+#BARPLOT
+ggplot(data.irga.sum) + aes(x=Site, y=meanPhoto, fill=Site )+
+  scale_fill_manual(values=c("tan1","deepskyblue4"), 
+                    labels=c('Borrego Basin', 'Clark Lake')) +
+  geom_col(alpha=1, position="dodge") + 
+  geom_errorbar( aes(x=Site, ymin=meanPhoto-sePhoto, ymax=meanPhoto+sePhoto), 
+                 width=0.4,
+                 colour="black", 
+                 alpha=0.7, 
+                 size=1.0,
+                 position=position_dodge(width=0.9)) +
+  scale_y_continuous(expand = c(0, 0),limits = c(0,26)) +
+  scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
+  xlab("Site")+ylab("Mean Photosynthetic Rate")+
+  ggtitle("Photosynthetic Rates at Each Survey Site")+
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
+
+#BOXPLOT
+ggplot(data.irga.indiv) + aes(x=Site, y=Photo, fill=Site)+
+  scale_fill_manual(values=c("tan1","deepskyblue4"),
+                    labels=c('Borrego Basin', 'Clark Lake')) +
+  geom_boxplot(aes(x=Site, y=Photo, fill=Site)) + 
+  scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
+  xlab("Site")+ylab("Photosynthetic Rate")+
+  ggtitle("Photosynthetic Rates at Each Survey Site")+
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### Stomatal Conductance
+
+```{r}
+#BARPLOT
+ggplot(data.irga.sum) + aes(x=Site, y=meanCond, fill=Site )+
+  scale_fill_manual(values=c("tan1","deepskyblue4"), 
+                    labels=c('Borrego Basin', 'Clark Lake')) +
+  geom_col(alpha=1, position="dodge") + 
+  geom_errorbar( aes(x=Site, ymin=meanCond-seCond, ymax=meanCond+seCond), 
+                 width=0.4,
+                 colour="black", 
+                 alpha=0.7, 
+                 size=1.0,
+                 position=position_dodge(width=0.9)) +
+  scale_y_continuous(expand = c(0, 0),limits = c(0,0.5)) +
+  scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
+  xlab("Site")+ylab("Mean Stomatal Conductance Rate")+
+  ggtitle("Stomatal Conductance Rates at Each Survey Site")+
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
+
+#BOXPLOT
+ggplot(data.irga.indiv) + aes(x=Site, y=Cond, fill=Site)+
+  scale_fill_manual(values=c("tan1","deepskyblue4"),
+                    labels=c('Borrego Basin', 'Clark Lake')) +
+  geom_boxplot(aes(x=Site, y=Cond, fill=Site)) + 
+  scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
+  xlab("Site")+ylab("Stomatal Conductance Rate")+
+  ggtitle("Stomatal Conductance Rates at Each Survey Site")+
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### Water Use Efficiency
+
+```{r}
+#BARPLOT
+ggplot(data.irga.sum) + aes(x=Site, y=meanWUE, fill=Site )+
+  scale_fill_manual(values=c("tan1","deepskyblue4"), 
+                    labels=c('Borrego Basin', 'Clark Lake')) +
+  geom_col(alpha=1, position="dodge") + 
+  geom_errorbar( aes(x=Site, ymin=meanWUE-seWUE, ymax=meanWUE+seWUE), 
+                 width=0.4,
+                 colour="black", 
+                 alpha=0.7, 
+                 size=1.0,
+                 position=position_dodge(width=0.9)) +
+  scale_y_continuous(expand = c(0, 0),limits = c(0,125)) +
+  scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
+  xlab("Site")+ylab("Mean Stomatal Conductance")+
+  ggtitle("Stomatal Conductance Rates at Each Survey Site")+
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
+
+#BOXPLOT
+ggplot(data.irga.indiv) + aes(x=Site, y=WUE, fill=Site)+
+  scale_fill_manual(values=c("tan1","deepskyblue4"),
+                    labels=c('Borrego Basin', 'Clark Lake')) +
+  geom_boxplot(aes(x=Site, y=WUE, fill=Site)) + 
+  scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
+  xlab("Site")+ylab("Water Use Efficiency Rate")+
+  ggtitle("Water Use Efficiency Rates at Each Survey Site")+
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## STATISTICAL ANALYSIS
+
+### Photosynthetic Rate
+
+```{r}
+#ANOVA
+Photo.aov <- aov(lnPhoto ~ Site, data=data.irga.indiv)
+summary(Photo.aov)
+
+#HOMOGENEITY OF VARIANCES
+plot(Photo.aov,1)
+leveneTest(lnPhoto ~ Site, data=data.irga.indiv)
+
+#T-TEST
+t.test(lnPhoto~Site, data=data.irga.indiv)
+
+#DISTRIBUTION OF RESIDUALS
+plot(Photo.aov,2)
+```
+
+### Stomatal Conductance
+
+```{r}
+#ANOVA
+Cond.aov <- aov(lnCond ~ Site, data=data.irga.indiv)
+summary(Cond.aov)
+
+#HOMOGENEITY OF VARIANCES
+plot(Cond.aov,1)
+leveneTest(lnCond ~ Site, data=data.irga.indiv)
+
+#T-TEST
+t.test(lnCond~Site, data=data.irga.indiv)
+
+#DISTRIBUTION OF RESIDUALS
+plot(Cond.aov,2)
+```
+
+### Water Use Efficiency
+
+```{r}
+#ANOVA
+WUE.aov <- aov(lnWUE ~ Site, data=data.irga.indiv)
+summary(WUE.aov)
+
+#HOMOGENEITY OF VARIANCES
+plot(WUE.aov,1)
+leveneTest(lnWUE ~ Site, data=data.irga.indiv)
+
+#T-TEST
+t.test(lnWUE~Site, data=data.irga.indiv)
+
+#DISTRIBUTION OF RESIDUALS
+plot(WUE.aov,2)
+```
+
+# \*\*CROSSAIR DATA
+
+### Load Libraries
+
+```{r}
+library(tidyverse) 
+library(lattice) 
+library(car) 
+library(scales)
+```
+
+## DATA CLEANUP
+
+```{r}
+#load and select data
+data.crosshair <- read.csv("GDE_crosshair.csv")
+str(data.crosshair)
+
+data.crosshair$Site <- as.factor(data.crosshair$Site)
+data.crosshair$TotalDead <- (data.crosshair$DeadStanding + data.crosshair$DeadDown)
+```
+
+### Calculate Dead vs. Alive
+
+```{r}
+data.cross.dead <- data.crosshair %>% group_by (Site) %>% 
+  summarise(sumDead = sum(TotalDead)) %>% ungroup()
+
+data.cross.alive <- data.crosshair %>% group_by (Site) %>% 
+  summarise(sumAlive = sum(LiveMesquite)) %>% ungroup()
+
+data.cross.plot <- merge(
+  data.cross.alive,
+  data.cross.dead,
+  by = "Site",
+  all.x = TRUE) %>%
+  pivot_longer(cols=c('sumAlive', 'sumDead'),names_to = "Status", values_to = "Count")
+```
+
+### Calculate Seedlings
+
+```{r}
+data.seed.plot <- data.crosshair %>%
+  group_by(Site) %>%
+  summarise(sumSeedling = sum(Seedings)) %>%
+  ungroup()
+```
+
+## GRAPH
+
+### Dead vs. Alive
+
+```{r}
+ggplot(data.cross.plot) + aes(x=Site, y=Count, fill=Status)+
+  scale_fill_manual(values=c("darkgreen","chocolate4"),
+                    labels=c('Alive', 'Dead')) +
+  geom_col(alpha=1, position="dodge") + 
+  scale_y_continuous(expand = c(0, 0),limits = c(0,25), 
+                     breaks = pretty_breaks()) +
+  scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
+  theme_classic()+
+  xlab("Site")+ylab("Count")+
+  ggtitle("Mesquite Life Status at Each Survey Site")+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### Seedlings
+
+```{r}
+ggplot(data.seed.plot) + aes(x=Site, y=sumSeedling)+
+  scale_fill_manual()+
+  geom_col(alpha=1, position="dodge") + 
+  scale_y_continuous(expand = c(0, 0),limits = c(0,5), 
+                     breaks = pretty_breaks()) +
+  scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
+  theme_classic()+
+  xlab("Site")+ylab("Count")+
+  ggtitle("Mesquite Seedling Counts at Each Survey Site")+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## STATISTICAL ANALYSIS
+
+### Dead
+
+```{r}
+#ANOVA
+dead.aov <- aov(TotalDead ~ Site, data=data.crosshair)
+summary(dead.aov)
+
+#HOMOGENEITY OF VARIANCES
+plot(dead.aov,1)
+leveneTest(TotalDead ~ Site, data=data.crosshair)
+
+#T-TEST
+t.test(TotalDead~Site, data=data.crosshair)
+
+#DISTRIBUTION OF RESIDUALS
+plot(dead.aov,2)
+```
+
+### Alive
+
+```{r}
+#ANOVA
+life.aov <- aov(LiveMesquite ~ Site, data=data.crosshair)
+summary(life.aov)
+
+#HOMOGENEITY OF VARIANCES
+plot(life.aov,1)
+leveneTest(LiveMesquite ~ Site, data=data.crosshair)
+
+#T-TEST
+t.test(LiveMesquite~Site, data=data.crosshair)
+
+#DISTRIBUTION OF RESIDUALS
+plot(life.aov,2)
+```
+
+### Seedlings
+
+```{r}
+#ANOVA
+seed.aov <- aov(Seedings ~ Site, data=data.crosshair)
+summary(seed.aov)
+
+#HOMOGENEITY OF VARIANCES
+plot(seed.aov,1)
+leveneTest(Seedings ~ Site, data=data.crosshair)
+
+#T-TEST
+t.test(Seedings ~ Site, data=data.crosshair)
+
+#DISTRIBUTION OF RESIDUALS
+plot(seed.aov,2)
+```
+
+# \*\*Canopy Health
+
+### Load Libraries
+
+```{r}
+library(tidyverse) 
+library(lattice) 
+library(car) 
+library(scales)
+library(GGally)
+```
+
+## DATA CLEANUP
+
+```{r}
+#load and select data
+data.canopy <- read.csv("GDE_Canopy.csv")
+str(data.canopy)
+
+data.canopy$Site <- as.factor(data.canopy$Site) 
+data.canopy$TreeID <- as.factor(data.canopy$Tree_ID)
+```
+
+### Check Normality
+
+```{r}
+histogram(data.canopy$Resprouting)
+histogram(data.canopy$CrownSizeShape)
+histogram(data.canopy$DeadBranches)
+histogram(data.canopy$CrownFoliarDensity)
+```
+
+### Merge All Data
+
+```{r}
+#merge irga data and canopy health data by treeid
+data.all <- merge(
+  data.irga.indiv,
+  data.canopy,
+  by = "TreeID",
+  all.x = TRUE)
+```
+
+## GRAPH
+
+### Resprouting
+
+```{r}
+ggplot(data.canopy) + aes(x=Site, y=Resprouting, fill=Site)+
+  scale_fill_manual(values=c("darkorange","darkgreen"),
+                    labels=c('Borrego Basin', 'Clark Lake')) +
+  geom_boxplot(aes(x=Site, y=Resprouting, fill=Site)) + 
+  scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
+  xlab("Site")+ylab("Resprouting") + 
+  theme_classic()
+```
+
+### Crown Size Density
+
+```{r}
+ggplot(data.canopy) + aes(x=Site, y=CrownSizeShape, fill=Site)+
+  scale_fill_manual(values=c("darkorange","darkgreen"),
+                    labels=c('Borrego Basin', 'Clark Lake')) +
+  geom_boxplot(aes(x=Site, y=CrownSizeShape, fill=Site)) + 
+  scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
+  xlab("Site")+ylab("Crown Size Shape") +
+  theme_classic()
+```
+
+### Dead Branches
+
+```{r}
+ggplot(data.canopy) + aes(x=Site, y=DeadBranches, fill=Site)+
+  scale_fill_manual(values=c("darkorange","darkgreen"),
+                    labels=c('Borrego Basin', 'Clark Lake')) +
+  geom_boxplot(aes(x=Site, y=DeadBranches, fill=Site)) + 
+  scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
+  xlab("Site")+ylab("Dead Branches") + 
+  theme_classic()
+```
+
+### Crown Foliar Density
+
+```{r}
+ggplot(data.canopy) + aes(x=Site, y=CrownFoliarDensity, fill=Site)+
+  scale_fill_manual(values=c("darkorange","darkgreen"),
+                    labels=c('Borrego Basin', 'Clark Lake')) +
+  geom_boxplot(aes(x=Site, y=CrownFoliarDensity, fill=Site)) + 
+  scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
+  xlab("Site")+ylab("CrownFoliar Density") + 
+  theme_classic()
+```
+
+### All Data
+
+```{r}
+ggpairs(data.all, columns = c("Photo", "WUE","Cond", "Resprouting", "DeadBranches", "CrownFoliarDensity", "CrownSizeShape" ), title = "Bivariate analysis of BROMAD physiological traits", upper = list(continuous = wrap("cor",size = 3)),
+        lower = list(continuous = wrap("smooth",
+                                       alpha = 0.3,
+                                       size = 0.1)),
+        mapping = aes(color = Site.x)) +
+  scale_fill_manual(values=c('darkorange','darkgreen')) +
+  scale_colour_manual(values=c('darkorange','darkgreen'))
+```
+
+## STATISTICAL ANALYSIS
+
+### Resprouting
+
+```{r}
+#ANOVA
+resprout.aov <- aov(Resprouting ~ Site, data=data.canopy)
+summary(resprout.aov)
+#HOMOGENEITY OF VARIANCE
+plot(resprout.aov,1)
+leveneTest(Resprouting ~ Site, data=data.canopy)
+#DISTRIBUTION OF RESIDUALS
+plot(resprout.aov,2)
+# EXTRACT RESIDUALS
+resprout.aov_residuals <- residuals(object = resprout.aov )
+#  SHAPIRO-WILK TEST
+shapiro.test(x = resprout.aov_residuals )
+```
+
+### Crown Size Density
+
+```{r}
+#ANOVA
+Crownsize.aov <- aov(Resprouting ~ Site, data=data.canopy)
+summary(Crownsize.aov)
+#HOMOGENEITY OF VARIANCE
+plot(Crownsize.aov,1)
+leveneTest(Resprouting ~ Site, data=data.canopy)
+#DISTRIBUTION OF RESIDUALS
+plot(Crownsize.aov,2)
+# EXTRACT RESIDUALS
+Crownsize.aov_residuals <- residuals(object = resprout.aov )
+#  SHAPIRO-WILK TEST
+shapiro.test(x = Crownsize.aov_residuals )
+
+```
+
+### Dead Branches
+
+```{r}
+#ANOVA
+Deadbranches.aov <- aov(Resprouting ~ Site, data=data.canopy)
+summary(Deadbranches.aov)
+#HOMOGENEITY OF VARIANCE
+plot(Deadbranches.aov,1)
+leveneTest(Resprouting ~ Site, data=data.canopy)
+#DISTRIBUTION OF RESIDUALS
+plot(Deadbranches.aov,2)
+# EXTRACT RESIDUALS
+Deadbranches.aov_residuals <- residuals(object = Deadbranches.aov )
+#  SHAPIRO-WILK TEST
+shapiro.test(x = Deadbranches.aov_residuals )
+```
+
+### Crown Foliar Density
+
+```{r}
+#ANOVA
+Density.aov <- aov(Resprouting ~ Site, data=data.canopy)
+summary(Density.aov)
+#HOMOGENEITY OF VARIANCE
+plot(Density.aov,1)
+leveneTest(Resprouting ~ Site, data=data.canopy)
+#DISTRIBUTION OF RESIDUALS
+plot(Density.aov,2)
+# EXTRACT RESIDUALS
+Density.aov_residuals <- residuals(object = Density.aov )
+#  SHAPIRO-WILK TEST
+shapiro.test(x = Density.aov_residuals )
+
+```
