@@ -557,3 +557,10 @@ Density.aov_residuals <- residuals(object = Density.aov )
 shapiro.test(x = Density.aov_residuals )
 
 ```
+
+FOCAL PROJECT FOR ADVANCED QUANT
+
+```{r}
+# Kelsey 
+
+```
