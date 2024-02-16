@@ -562,5 +562,6 @@ FOCAL PROJECT FOR ADVANCED QUANT
 
 ```{r}
 # Kelsey 
+# maybe pca with data 
 
 ```
