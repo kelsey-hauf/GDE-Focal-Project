@@ -6,7 +6,7 @@ date: "created Aug 3,2021, last modified 2/19/24"
 output: html_document
 ---
 
-# Multivariate Analysis - Constrained Analysis 
+# Multivariate Analysis - Constrained Analysis
 
 ```{r}
 ##  Load packages
@@ -81,5 +81,5 @@ ordiplot(mydata.mds, display = "sites", main = "Unconstrained ordination at Year
 plot(MesquiteDiff.sspfit, p.max = 0.01, col = "black", cex = 0.7)
  } # change the significance level of species shown with p.max
 
-MesquiteDiff.sspfit$plot
+MesquiteDiff.sspfit$plot 
 ```
