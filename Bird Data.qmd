@@ -4,14 +4,99 @@ format: html
 editor: visual
 ---
 
-## Quarto
+# Bird Data 
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+Bird Survey Data including date, time, surveyors, site, temp, cloud cover, windspeed, survey point, species spotted, and distance
 
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+## Load Libraries 
 
 ```{r}
-1 + 1
+library(ggplot2)
+library(tidyverse)
+```
+
+## Load Data 
+
+```{r}
+bird1 <-read.csv("Bird Survey Data - December 2023.csv")
+bird2 <-read.csv("Bird Survey Data - February 2024.csv")
+```
+
+```{r}
+bird <- bind_rows(bird, bird2)
+```
+
+### Bird Species Abundance and Richness 
+
+```{r}
+# Abundance
+birdcount <- bird %>%
+  group_by(Site, Species) %>%
+  summarise(Count = n()) %>%
+  ungroup()
+
+#Species richness
+birdtotal <- bird %>%
+  group_by(Site) %>%
+  summarise(Count = n()) %>%
+  ungroup()
+```
+
+```{r}
+#Calculate mean and standard error
+birdSD <- birdcount |> 
+  group_by (Site) |>  
+  summarise(meanCount = mean(Count), seCount = sd(Count)/sqrt(length(Count))) |>  
+  ungroup() |> 
+  merge(birdtotal,
+        by = "Site",
+        all.x = TRUE)
+
+```
+
+```{r}
+#graph abundance
+ggplot(birdSD) + aes(x = Site, y = Count, fill = Site) +
+  
+   scale_fill_manual(values = c("tan1","deepskyblue4")) +
+  
+  geom_col()+
+  
+  geom_errorbar(aes(x=Site, 
+                    ymin = meanCount - seCount, 
+                    ymax = meanCount + seCount),
+                 width = 0.4,
+                 colour = "black", 
+                 alpha = 0.7, 
+                 size = 1.0,
+                 position = position_dodge(width = 0.9)) +
+  
+    scale_y_continuous(expand = c(0, 0),limits = c(0,10)) +
+   theme_classic() +
+  
+  ylab("Mean Abundance") +
+  ggtitle("Bird Abundance") +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r}
+#graph species richness
+
+
+ggplot(birdcount) + 
+  aes(x=Species, y=Count, fill=Site)+
+  scale_fill_manual(values=c("tan1","deepskyblue4"),
+                    labels=c('BSB', 'CDL')) +
+  geom_col(alpha=1, position="dodge") + 
+  scale_y_continuous(expand = c(0, 0),limits = c(0,5), 
+                     breaks = pretty_breaks()) +
+  theme_classic()+
+  xlab("Site")+ylab("Count")+
+  ggtitle("Species Richness of Birds")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+# add zeros / different graph  to show zero birds at site 
 ```
