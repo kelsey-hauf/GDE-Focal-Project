@@ -4,43 +4,115 @@ format: html
 editor: visual
 ---
 
-# Bird Data 
+# Bird Data
 
 Bird Survey Data including date, time, surveyors, site, temp, cloud cover, windspeed, survey point, species spotted, and distance
 
-## Load Libraries 
+## Load Libraries
 
 ```{r}
 library(ggplot2)
 library(tidyverse)
+library(vegan)
 ```
 
-## Load Data 
+### Load Data
 
 ```{r}
+#Load csv files
 bird1 <-read.csv("Bird Survey Data - December 2023.csv")
 bird2 <-read.csv("Bird Survey Data - February 2024.csv")
 ```
 
 ```{r}
-bird <- bind_rows(bird, bird2)
+#Merge data sets
+bird <- bind_rows(bird1, bird2)
 ```
 
-### Bird Species Abundance and Richness 
+## Analysis
+
+### Species Richness
 
 ```{r}
-# Abundance
+#Summarize count of each bird species found at each site
 birdcount <- bird %>%
   group_by(Site, Species) %>%
   summarise(Count = n()) %>%
   ungroup()
 
-#Species richness
+
+
+```
+
+#### Statistical Analysis
+
+```{r}
+
+
+```
+
+#### Diversity Index
+
+```{r}
+birdcount2 <- birdcount %>%
+  group_by(Site) %>%
+  mutate(Relative_Abundance = Count / sum(Count))
+
+shannon_index <- birdcount2 %>%
+  group_by(Site) %>%
+  summarize(Shannon_Index = -sum(Relative_Abundance * log(Relative_Abundance)))
+```
+
+#### Graph
+
+```{r}
+bird_zero <- expand.grid(Species = unique(birdcount$Species), Site = unique(birdcount$Site))
+bird_zero <- left_join(bird_zero, birdcount, by = c("Species", "Site"))
+bird_zero$Count[is.na(bird_zero$Count)] <- 0
+
+species_count <- bird_zero %>%
+  group_by(Site) %>%
+  summarize(Richness = n_distinct(Species))
+
+ggplot() +
+  geom_bar(data = bird_zero, aes(x = Species, y = Count, fill = Site), stat = "identity", position = "dodge", color = "black") +
+  geom_text(data = species_count, aes(x = 0, y = 0, label = Richness)) +
+  labs(title = "Species Richness and Abundance Comparison Between Sites",
+       x = "Species", y = "Abundance") +
+  scale_fill_manual(values = c("BSB" = "tan1", "CDL" = "deepskyblue4")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "top") +
+  scale_y_continuous(expand = c(0, 0),limits = c(0,6))
+```
+
+### Abundance
+
+```{r}
 birdtotal <- bird %>%
   group_by(Site) %>%
   summarise(Count = n()) %>%
   ungroup()
 ```
+
+#### Statistical Analysis
+
+```{r}
+# Subset data for each site
+BSB_data <- birdcount$Count[birdcount$Site == "BSB"]
+CDL_data <- birdcount$Count[birdcount$Site == "CDL"]
+
+# Perform t-test
+t.test(BSB_data, CDL_data)
+```
+
+#### Relative Species Abundance
+
+```{r}
+birdtotal
+```
+
+#### Calculate Mean and Standard Error
 
 ```{r}
 #Calculate mean and standard error
@@ -52,51 +124,31 @@ birdSD <- birdcount |>
         by = "Site",
         all.x = TRUE)
 
-```
-
-```{r}
-#graph abundance
-ggplot(birdSD) + aes(x = Site, y = Count, fill = Site) +
-  
-   scale_fill_manual(values = c("tan1","deepskyblue4")) +
-  
-  geom_col()+
-  
-  geom_errorbar(aes(x=Site, 
-                    ymin = meanCount - seCount, 
-                    ymax = meanCount + seCount),
-                 width = 0.4,
-                 colour = "black", 
-                 alpha = 0.7, 
-                 size = 1.0,
-                 position = position_dodge(width = 0.9)) +
-  
-    scale_y_continuous(expand = c(0, 0),limits = c(0,10)) +
-   theme_classic() +
-  
-  ylab("Mean Abundance") +
-  ggtitle("Bird Abundance") +
-  theme_classic() +
-  theme(plot.title = element_text(hjust = 0.5))
+birdSD$meanCount <-as.integer(birdSD$meanCount)
+birdSD$seCount <-as.integer(birdSD$seCount)
 
 ```
 
+#### Graph
+
 ```{r}
-#graph species richness
-
-
-ggplot(birdcount) + 
-  aes(x=Species, y=Count, fill=Site)+
-  scale_fill_manual(values=c("tan1","deepskyblue4"),
-                    labels=c('BSB', 'CDL')) +
-  geom_col(alpha=1, position="dodge") + 
-  scale_y_continuous(expand = c(0, 0),limits = c(0,5), 
-                     breaks = pretty_breaks()) +
+ggplot(birdcount, aes(x = Site, y = Count, fill=Site)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Site", y = "Abundance", title = "Species Abundance by Site") +
+  scale_fill_manual(values = c("BSB" = "tan1", "CDL" = "deepskyblue4"))+
+  scale_y_continuous(expand = c(0, 0),limits = c(0,35)) +
   theme_classic()+
-  xlab("Site")+ylab("Count")+
-  ggtitle("Species Richness of Birds")+
+    theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r}
+ggplot(birdcount, aes(x=Count, fill=Site)) + 
+  geom_histogram(binwidth=1, color="black", position = "dodge")+
+  scale_fill_manual(values = c("BSB" = "tan1", "CDL" = "deepskyblue4"))+
+  labs(x = "Count", y = "Frequency", title = "Frequency of Occurance") +
+  theme_classic()+
+  scale_y_continuous(expand = c(0, 0),limits = c(0,10))+
   theme(plot.title = element_text(hjust = 0.5))
-
-
-# add zeros / different graph  to show zero birds at site 
+  
 ```

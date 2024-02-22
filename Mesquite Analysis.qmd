@@ -421,7 +421,10 @@ data.all <- merge(
   data.irga.indiv,
   data.canopy,
   by = "TreeID",
-  all.x = TRUE)
+  all.x = TRUE) %>%
+  subset(select=-Site.y) %>%
+  rename(Site=Site.x)
+
 ```
 
 ## GRAPH
