@@ -36,7 +36,7 @@ bird <- bind_rows(bird1, bird2)
 ```{r}
 #Summarize count of each bird species found at each site
 birdcount <- bird %>%
-  group_by(Site, Species) %>%
+  group_by(Site, Species, Date) %>%
   summarise(Count = n()) %>%
   ungroup()
 
