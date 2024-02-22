@@ -69,7 +69,7 @@ Adding species vectors to the plot of sites
 
 #ZeroYr.sspfit <- envfit(mydata.mds, numericonly, permutations = 999)
 
-MesquiteDiff.sspfit <- gg_envfit(mydata.mds, numericonly)
+MesquiteDiff.sspfit <- gg_envfit(mydata.mds, numericonly) 
 
 
 ```
