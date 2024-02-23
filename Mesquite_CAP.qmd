@@ -25,8 +25,8 @@ Mesquite <-read.csv("Mesquite_AllData.csv")
 ```{r}
 MesquiteDiff <- Mesquite %>%
     filter(
-        (Site.x == 1)| 
-        (Site.x == 5)
+        (Site == 1)| 
+        (Site == 5)
       )
 ```
 
