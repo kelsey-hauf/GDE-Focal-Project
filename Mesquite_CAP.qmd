@@ -28,6 +28,10 @@ MesquiteDiff <- Mesquite %>%
         (Site == 1)| 
         (Site == 5)
       )
+
+MesquiteDiff <- MesquiteDiff |>
+  mutate(Site = case_when(Site == "1" ~ "BSB", 
+                          Site == "5" ~ "CDL"))
 ```
 
 ### NMDS (non-metric dimensional scaling) is an unconstrained analysis
@@ -71,7 +75,24 @@ Adding species vectors to the plot of sites
 
 MesquiteDiff.sspfit <- gg_envfit(mydata.mds, numericonly) 
 
+# ggplot version
 
+Misquite_points <- bind_cols(MesquiteDiff,MesquiteDiff.sspfit$df_ord)
+Misquite_arrows <- MesquiteDiff.sspfit$df_arrows
+
+
+library(ordr)
+
+ggplot() + 
+  geom_point(data = Misquite_points,  
+             aes(x = x, y = y, color = Site)) + 
+  geom_vector(data = Misquite_arrows, aes(x = x, y = y)) + 
+  geom_text(data = Misquite_arrows, 
+            aes(x = x, y = y, label = var), 
+            vjust = 1)+ 
+  labs(y = "NMDS2", x = "NMDS1")
+
+ MesquiteDiff.sspfit$df_arrows
 ```
 
 ```{r}
