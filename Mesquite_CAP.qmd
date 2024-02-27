@@ -63,11 +63,6 @@ plot1 <- ordiplot(mydata.mds, choices=c(1,2)) #sites are circles, + are species
 Adding species vectors to the plot of sites
 
 ```{r}
-# mydata.mds was the output of our NMDS above
-# envfit is a function that creates vectors for how the different environmental factors (in this case, species) correlate with the NMDS result
-# gg_envfit is the ggplot equivalent
-
-#ZeroYr.sspfit <- envfit(mydata.mds, numericonly, permutations = 999)
 
 MesquiteDiff.sspfit <- gg_envfit(mydata.mds, numericonly) 
 
@@ -75,11 +70,75 @@ MesquiteDiff.sspfit <- gg_envfit(mydata.mds, numericonly)
 ```
 
 ```{r}
-# brackets make these lines run together - needs to for the plots to overlay
-{
-ordiplot(mydata.mds, display = "sites", main = "Unconstrained ordination at Year 0")
-plot(MesquiteDiff.sspfit, p.max = 0.01, col = "black", cex = 0.7)
- } # change the significance level of species shown with p.max
+numericonly2 <- MesquiteDiff |> select(Site,Resprouting, CrownSizeShape, CrownFoliarDensity, DeadBranches)
 
-MesquiteDiff.sspfit$plot 
+
+
+trial<-gg_envfit(mydata.mds, numericonly2) 
+
+trial + geom_point(aes(color = Site))
 ```
+
+### CAP
+
+#### CAP analysis
+
+First, we'll perform CAP on the same ZeroYr data set to show how it differs from NMDS in finding differences among habitats.
+
+```{r}
+MesquiteDiff.cap <- capscale(numericonly ~ Site, MesquiteDiff, dist="bray") 
+MesquiteDiff.cap
+```
+
+```{r}
+scores(MesquiteDiff.cap)
+```
+
+#### Test for differences using PERMANOVA
+
+We can run anova directly on our capscale output object.
+
+```{r}
+anova(MesquiteDiff.cap) 
+```
+
+-   Permutation ANOVA also shows significant difference at start among habitats
+
+#### Basic plots
+
+```{r}
+plot(MesquiteDiff.cap, display=c("sp", "sites","cn"),type="text")
+```
+
+```{r}
+plot(MesquiteDiff.cap, display=c("sp", "cn"),type="text")# xlim=c(-2,2), ylim=c(-1,2))
+```
+
+#### Nicer plots of CAP
+
+```{r}
+{
+ordiplot(MesquiteDiff.cap, type = "n", main = "CAP of Mesquite")
+orditorp(MesquiteDiff.cap, display = "sites", labels = MesquiteDiff$habitat, pch = c(16, 8) [(MesquiteDiff$Site)], col = c("red", "blue") [as.factor(MesquiteDiff$Site)])
+ordihull(MesquiteDiff.cap, groups = MesquiteDiff$Site, draw = "polygon", lty = 1, col = "grey90")
+orditorp(MesquiteDiff.cap, display = "species")
+}
+
+gg_ordiplot(
+    MesquiteDiff.cap,
+    groups = MesquiteDiff$Site,
+    scaling = 1,
+    choices = c(1, 2),
+    show.groups = "all",
+    label = TRUE,
+    hull = TRUE,
+    ellipse = FALSE,
+    spiders = FALSE,
+    pt.size = 1,
+    plot = TRUE
+) 
+```
+
+Conclusion: Note that CAP does a better job of separating the two habitats than does NMDS!
+
+This happens because the CAP ordination is specifically constrained to look for habitat separation
