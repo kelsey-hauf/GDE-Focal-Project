@@ -1,15 +1,16 @@
 ---
 title: "Multivariate Analysis - Mesquite"
 subtitle: "adapted from IRC Data analysis for R2R summer institute 2021"
-author: "Janet Gonzalez, Amy Henry, adapted from Diane Campbell"
-date: "created Aug 3,2021, last modified 2/19/24"
+author: "Janet Gonzalez, Kelsey Hauf"
+date: "last modified 2/27/24"
 output: html_document
 ---
 
 # Multivariate Analysis - Constrained Analysis
 
+## Load Data
+
 ```{r}
-##  Load packages
 library(tidyverse)
 library(vegan)
 library(ggplot2)
@@ -17,7 +18,6 @@ library(ggordiplots)
 ```
 
 ```{r}
-# Read in BeeFlat data
 Mesquite <-read.csv("Mesquite_AllData.csv")
 
 ```
@@ -34,21 +34,16 @@ MesquiteDiff <- MesquiteDiff |>
                           Site == "5" ~ "CDL"))
 ```
 
-### NMDS (non-metric dimensional scaling) is an unconstrained analysis
-
-Function `metaMDS()` requires numeric data only.
+### NMDS
 
 ```{r}
-# reduce our matrix to include only the community data, no reference columns
 numericonly <- MesquiteDiff |> select(Resprouting, CrownSizeShape, CrownFoliarDensity, DeadBranches)
 
-# Run the NMDS function
 mydata.mds <- metaMDS(numericonly, distance="bray", k=2, autotransform=FALSE, noshare = FALSE)
-# stress < 0.2 which means NMDS represents the variation well
 
 ```
 
-#### Basic plots of NMDS
+#### NMDS Plot 1
 
 ```{r}
 plot(mydata.mds,type="t",display=c("species"))
@@ -59,18 +54,14 @@ plot(mydata.mds,type="t",display=c("sites"))
 ```
 
 ```{r}
-plot1 <- ordiplot(mydata.mds, choices=c(1,2)) #sites are circles, + are species
+plot1 <- ordiplot(mydata.mds, choices=c(1,2)) 
 ```
 
-#### Making a better plot
-
-Adding species vectors to the plot of sites
+#### NMDS Plot 2
 
 ```{r}
-
 MesquiteDiff.sspfit <- gg_envfit(mydata.mds, numericonly) 
 
-# ggplot version
 
 Misquite_points <- bind_cols(MesquiteDiff,MesquiteDiff.sspfit$df_ord)
 Misquite_arrows <- MesquiteDiff.sspfit$df_arrows
@@ -90,21 +81,7 @@ ggplot() +
  MesquiteDiff.sspfit$df_arrows
 ```
 
-```{r}
-numericonly2 <- MesquiteDiff |> select(Site,Resprouting, CrownSizeShape, CrownFoliarDensity, DeadBranches)
-
-
-
-trial<-gg_envfit(mydata.mds, numericonly2) 
-
-trial + geom_point(aes(color = Site))
-```
-
 ### CAP
-
-#### CAP analysis
-
-First, we'll perform CAP on the same ZeroYr data set to show how it differs from NMDS in finding differences among habitats.
 
 ```{r}
 MesquiteDiff.cap <- capscale(numericonly ~ Site, MesquiteDiff, dist="bray") 
@@ -115,36 +92,25 @@ MesquiteDiff.cap
 scores(MesquiteDiff.cap)
 ```
 
-#### Test for differences using PERMANOVA
-
-We can run anova directly on our capscale output object.
+#### PERMANOVA
 
 ```{r}
 anova(MesquiteDiff.cap) 
 ```
 
--   Permutation ANOVA also shows significant difference at start among habitats
-
-#### Basic plots
+#### CAP Plot 1
 
 ```{r}
 plot(MesquiteDiff.cap, display=c("sp", "sites","cn"),type="text")
 ```
 
 ```{r}
-plot(MesquiteDiff.cap, display=c("sp", "cn"),type="text")# xlim=c(-2,2), ylim=c(-1,2))
+plot(MesquiteDiff.cap, display=c("sp", "cn"),type="text")
 ```
 
-#### Nicer plots of CAP
+#### CAP Plot 2
 
 ```{r}
-{
-ordiplot(MesquiteDiff.cap, type = "n", main = "CAP of Mesquite")
-orditorp(MesquiteDiff.cap, display = "sites", labels = MesquiteDiff$habitat, pch = c(16, 8) [(MesquiteDiff$Site)], col = c("red", "blue") [as.factor(MesquiteDiff$Site)])
-ordihull(MesquiteDiff.cap, groups = MesquiteDiff$Site, draw = "polygon", lty = 1, col = "grey90")
-orditorp(MesquiteDiff.cap, display = "species")
-}
-
 gg_ordiplot(
     MesquiteDiff.cap,
     groups = MesquiteDiff$Site,
@@ -159,7 +125,3 @@ gg_ordiplot(
     plot = TRUE
 ) 
 ```
-
-Conclusion: Note that CAP does a better job of separating the two habitats than does NMDS!
-
-This happens because the CAP ordination is specifically constrained to look for habitat separation
