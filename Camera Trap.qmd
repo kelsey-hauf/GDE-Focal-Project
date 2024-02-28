@@ -4,7 +4,7 @@ format: html
 editor: visual
 ---
 
-## Load Libraries 
+## Load Libraries
 
 ```{r}
 library(ggplot2)
@@ -18,12 +18,12 @@ library(vegan)
 camera <-read.csv("GDE Wildlife Camera Trap Image Processing  - DATA.csv")
 ```
 
-## Analysis 
+## Analysis
 
 ```{r}
 #Summarize count of each bird species found at each site
 cameracount <- camera %>%
-  group_by('Location Code', Species) %>%
+  group_by(Location.Code, Species, Camera.Start.Date) %>%
   summarise(Count = n()) %>%
   ungroup()
 ```
@@ -35,7 +35,14 @@ Calculate RAI
 RAI = \# occurrences/# days in operation
 
 ```{r}
-TrapRAI <- bird
-count |> 
-  mutate(RAI = Count/2)
+TrapRAI <- cameracount |> 
+  mutate(RAI = Count/3)
+```
+
+```{r}
+TrapRAI |> 
+  ggplot(aes(y = RAI, x = Camera.Start.Date, color = Location.Code)) + 
+  geom_point() + 
+  geom_line() + 
+  facet_wrap(Location.Code ~. )
 ```
