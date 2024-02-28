@@ -4,6 +4,38 @@ format: html
 editor: visual
 ---
 
+## Load Libraries 
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(vegan)
+```
+
+## Load Data set
+
 ```{r}
 camera <-read.csv("GDE Wildlife Camera Trap Image Processing  - DATA.csv")
+```
+
+## Analysis 
+
+```{r}
+#Summarize count of each bird species found at each site
+cameracount <- camera %>%
+  group_by('Location Code', Species) %>%
+  summarise(Count = n()) %>%
+  ungroup()
+```
+
+## **Trap RAI**
+
+Calculate RAI
+
+RAI = \# occurrences/# days in operation
+
+```{r}
+TrapRAI <- bird
+count |> 
+  mutate(RAI = Count/2)
 ```
