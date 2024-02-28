@@ -36,10 +36,15 @@ bird <- bind_rows(bird1, bird2)
 ```{r}
 #Summarize count of each bird species found at each site
 birdcount <- bird %>%
-  group_by(Site, Species, Date) %>%
+  group_by(Site, Species) %>%
   summarise(Count = n()) %>%
   ungroup()
 
+#Add dates for RAI analysis
+birdcount_date <- bird %>%
+  group_by(Site, Species, Date) %>%
+  summarise(Count = n()) %>%
+  ungroup()
 
 
 ```
@@ -160,7 +165,7 @@ Calculate RAI
 RAI = \# occurrences/# days in operation
 
 ```{r}
-birdRAI <- birdcount |> 
+birdRAI <- birdcount_date |> 
   mutate(RAI = Count/2)
  #mutate(MonthYear = mdy(paste(Month,"1",Year,sep = "/"))) 
 ```
