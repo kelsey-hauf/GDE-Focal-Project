@@ -4,45 +4,183 @@ format: html
 editor: visual
 ---
 
-## Load Libraries
+# Load Libraries
 
 ```{r}
 library(ggplot2)
 library(tidyverse)
 library(vegan)
+library(data.table)
 ```
 
-## Load Data set
+# Load Data set
 
 ```{r}
 camera <-read.csv("GDE Wildlife Camera Trap Image Processing  - DATA.csv")
 ```
 
-## Analysis
+## Data Cleaning
 
 ```{r}
-#Summarize count of each bird species found at each site
+#remove . from column names
+names(camera) <- gsub("\\.", "", names(camera))
+
+#Only select certain data
+camera<-select(camera, CameraStartDate, CameraEndDate, LocationCode, Species, XofIndividuals, Date, Time, DaysActive) 
+
+#Format column to Date
+camera$Date <- as.Date(as.character(camera$Date), format = "%Y%m%d")
+
+#Format column to Time
+camera$Time <- as.ITime(camera$Time)
+
+camera$DaysActive <- as.numeric(camera$DaysActive)
+
+```
+
+## All Unique Values
+
+```{r}
+#Find all unique values
+camera$Species %>%
+  unique()
+```
+
+## Summary Count
+
+```{r}
+#Summarize count of each species found at each camera
 cameracount <- camera %>%
-  group_by(Location.Code, Species, Camera.Start.Date) %>%
+  group_by(LocationCode, Species) %>%
   summarise(Count = n()) %>%
   ungroup()
 ```
 
-## **Trap RAI**
+# **Trap RAI**
 
-Calculate RAI
-
-RAI = \# occurrences/# days in operation
+## Rabbit
 
 ```{r}
-TrapRAI <- cameracount |> 
-  mutate(RAI = Count/3)
+# str_detect checks for certain strings
+# regex stands for "regular expressions"
+# ignore_case = T find regardless of capitalization
+Data_Rabbit_full <- camera |> 
+  filter(str_detect(Species, regex('rabbit', ignore_case = T)))
+
 ```
 
 ```{r}
-TrapRAI |> 
-  ggplot(aes(y = RAI, x = Camera.Start.Date, color = Location.Code)) + 
+Data_Rabbit <- Data_Rabbit_full |> 
+  #Combine Date and Time columns
+  mutate(DateTime = ymd_hms(paste(Date,Time))) |>
+  group_by(LocationCode) |> 
+  mutate(PrevObs = lag(DateTime, order_by = c(LocationCode))) |> 
+  # Calculate an elapsed time since the last observation
+  mutate(TimePast = DateTime - PrevObs) |> 
+  # Rid of observations less than 5 minutes later than previous observation
+  filter(TimePast > 300 | is.na(TimePast) == TRUE) |>
+  # extract month number
+  mutate(
+    Year = year(Date),
+    Month = month(Date)
+  )
+```
+
+```{r}
+Month_Rabbit <- Data_Rabbit |> 
+  group_by(Month, Year, LocationCode, DaysActive) |> 
+  summarize(MonthAbund = sum(XofIndividuals))
+
+Month_Rabbit_RAI <- Month_Rabbit |> 
+  mutate(RAI = MonthAbund/DaysActive) |> 
+  mutate(MonthYear = mdy(paste(Month,"1",Year,sep = "/"))) 
+
+Month_Rabbit_RAI |> 
+  filter(LocationCode == "ABF4") |> 
+  ggplot(aes(y = RAI, x = MonthYear, color = LocationCode)) + 
   geom_point() + 
   geom_line() + 
-  facet_wrap(Location.Code ~. )
+  facet_wrap(LocationCode ~. )
+```
+
+## Bird
+
+```{r}
+Data_Bird_full <- camera |> 
+  filter(str_detect(Species, regex('bird', ignore_case = T)))
+```
+
+```{r}
+Data_Bird <- Data_Bird_full |> 
+  #Combine Date and Time columns
+  mutate(DateTime = ymd_hms(paste(Date,Time))) |>
+  group_by(LocationCode) |> 
+  mutate(PrevObs = lag(DateTime, order_by = c(LocationCode))) |> 
+  # Calculate an elapsed time since the last observation
+  mutate(TimePast = DateTime - PrevObs) |> 
+  # Rid of observations less than 5 minutes later than previous observation
+  filter(TimePast > 300 | is.na(TimePast) == TRUE) |>
+  # extract month number
+  mutate(
+    Year = year(Date),
+    Month = month(Date)
+  )
+```
+
+```{r}
+Month_Bird <- Data_Bird |> 
+  group_by(Month, Year, LocationCode, DaysActive) |> 
+  summarize(MonthAbund = sum(XofIndividuals))
+
+Month_Bird_RAI <- Month_Bird |> 
+  mutate(RAI = MonthAbund/DaysActive) |> 
+  mutate(MonthYear = mdy(paste(Month,"1",Year,sep = "/"))) 
+
+Month_Bird_RAI |> 
+  filter(LocationCode == "ABF1") |> 
+  ggplot(aes(y = RAI, x = MonthYear, color = LocationCode)) + 
+  geom_point() + 
+  geom_line() + 
+  facet_wrap(LocationCode ~. )
+```
+
+## Coyote
+
+```{r}
+Data_Coyote_full <- camera |> 
+  filter(str_detect(Species, regex('coyote', ignore_case = T)))
+```
+
+```{r}
+Data_Coyote <- Data_Coyote_full |> 
+  #Combine Date and Time columns
+  mutate(DateTime = ymd_hms(paste(Date,Time))) |>
+  group_by(LocationCode) |> 
+  mutate(PrevObs = lag(DateTime, order_by = c(LocationCode))) |> 
+  # Calculate an elapsed time since the last observation
+  mutate(TimePast = DateTime - PrevObs) |> 
+  # Rid of observations less than 5 minutes later than previous observation
+  filter(TimePast > 300 | is.na(TimePast) == TRUE) |>
+  # extract month number
+  mutate(
+    Year = year(Date),
+    Month = month(Date)
+  )
+```
+
+```{r}
+Month_Coyote <- Data_Coyote |> 
+  group_by(Month, Year, LocationCode, DaysActive) |> 
+  summarize(MonthAbund = sum(XofIndividuals))
+
+Month_Coyote_RAI <- Month_Coyote |> 
+  mutate(RAI = MonthAbund/DaysActive) |> 
+  mutate(MonthYear = mdy(paste(Month,"1",Year,sep = "/"))) 
+
+Month_Coyote_RAI |> 
+  filter(LocationCode == "ABF4" | LocationCode =="CDL4NL") |> 
+  ggplot(aes(y = RAI, x = MonthYear, color = LocationCode)) + 
+  geom_point() + 
+  geom_line() + 
+  facet_wrap(LocationCode ~. )
 ```
