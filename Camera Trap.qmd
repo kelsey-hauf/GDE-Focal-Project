@@ -26,14 +26,14 @@ camera <-read.csv("GDE Wildlife Camera Trap Image Processing  - DATA.csv")
 names(camera) <- gsub("\\.", "", names(camera))
 
 #Only select certain data
-camera<-select(camera, CameraStartDate, CameraEndDate, LocationCode, Species, XofIndividuals, Date, Time, DaysActive) 
+camera<-select(camera, CameraStartDate, CameraEndDate, CameraName, LocationCode, Species, XofIndividuals, Date, Time, DaysActive) 
 
 #Format column to Date
 camera$Date <- as.Date(as.character(camera$Date), format = "%Y%m%d")
 
 #Format column to Time
 camera$Time <- as.ITime(camera$Time)
-
+#Format column to integer
 camera$DaysActive <- as.numeric(camera$DaysActive)
 
 ```
@@ -83,7 +83,9 @@ Data_Rabbit <- Data_Rabbit_full |>
   mutate(
     Year = year(Date),
     Month = month(Date)
-  )
+  ) |>
+  #Add trophic level for later graphing
+  mutate(TrophicLevel = "Prey")
 ```
 
 ```{r}
@@ -112,19 +114,16 @@ Data_Bird_full <- camera |>
 
 ```{r}
 Data_Bird <- Data_Bird_full |> 
-  #Combine Date and Time columns
   mutate(DateTime = ymd_hms(paste(Date,Time))) |>
   group_by(LocationCode) |> 
   mutate(PrevObs = lag(DateTime, order_by = c(LocationCode))) |> 
-  # Calculate an elapsed time since the last observation
   mutate(TimePast = DateTime - PrevObs) |> 
-  # Rid of observations less than 5 minutes later than previous observation
   filter(TimePast > 300 | is.na(TimePast) == TRUE) |>
-  # extract month number
   mutate(
     Year = year(Date),
     Month = month(Date)
-  )
+  ) |>
+  mutate(TrophicLevel = "Prey")
 ```
 
 ```{r}
@@ -153,19 +152,16 @@ Data_Coyote_full <- camera |>
 
 ```{r}
 Data_Coyote <- Data_Coyote_full |> 
-  #Combine Date and Time columns
   mutate(DateTime = ymd_hms(paste(Date,Time))) |>
   group_by(LocationCode) |> 
   mutate(PrevObs = lag(DateTime, order_by = c(LocationCode))) |> 
-  # Calculate an elapsed time since the last observation
   mutate(TimePast = DateTime - PrevObs) |> 
-  # Rid of observations less than 5 minutes later than previous observation
   filter(TimePast > 300 | is.na(TimePast) == TRUE) |>
-  # extract month number
   mutate(
     Year = year(Date),
     Month = month(Date)
-  )
+  ) |>
+  mutate(TrophicLevel = "Predator")
 ```
 
 ```{r}
@@ -183,4 +179,22 @@ Month_Coyote_RAI |>
   geom_point() + 
   geom_line() + 
   facet_wrap(LocationCode ~. )
+```
+
+# Stacked Barplot of Occurance
+
+```{r}
+#Combine the 3 dataframes of observations
+camera_abundance<-rbind(Data_Coyote, Data_Bird, Data_Rabbit) %>%
+  mutate()
+
+ggplot(camera_abundance, aes(x = CameraName, y = XofIndividuals, fill=TrophicLevel)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  scale_y_continuous(expand = c(0,0),labels = scales::number_format(scale = 1, accuracy = 1)) +
+   labs(y = "Number of Individuals", x="Site", fill="Trophic Level", 
+        title="Trophic Levels Observed at Both Study Sites")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  scale_fill_manual(values = c("tan1", "deepskyblue4"))+
+  theme_classic()
 ```
