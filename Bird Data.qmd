@@ -26,14 +26,15 @@ bird2 <-read.csv("Bird Survey Data - February 2024.csv")
 
 ```{r}
 #Merge data sets
-bird <- bind_rows(bird1, bird2)
+bird <- bind_rows(bird1, bird2) 
+
+bird$SiteID<- paste(bird$Site, bird$Point)
+
+bird$Date<-as.Date(bird$Date, "%m/%d/%y")
+
 ```
 
 ## Analysis
-
-```{r}
-
-```
 
 ### Species Richness
 
@@ -53,7 +54,7 @@ birdcount_date <- bird %>%
 
 ```
 
-### Log Transformation
+#### Log Transformation
 
 ```{r}
 
@@ -62,7 +63,6 @@ birdcount_date <- bird %>%
 #### Statistical Analysis
 
 ```{r}
-
 
 ```
 
@@ -81,6 +81,7 @@ shannon_index <- birdcount2 %>%
 #### Barplot of Species Abundance
 
 ```{r}
+#These lines of code add 0 to species that were observed in one site but not the other
 bird_zero <- expand.grid(Species = unique(birdcount$Species), Site = unique(birdcount$Site))
 bird_zero <- left_join(bird_zero, birdcount, by = c("Species", "Site"))
 bird_zero$Count[is.na(bird_zero$Count)] <- 0
@@ -92,13 +93,13 @@ species_count <- bird_zero %>%
 ggplot() +
   geom_bar(data = bird_zero, aes(x = Species, y = Count, fill = Site), stat = "identity", position = "dodge", color = "black") +
   geom_text(data = species_count, aes(x = 0, y = 0, label = Richness)) +
-  labs(title = "Species Richness and Abundance Comparison Between Sites",
+  labs(title = "Species Abundance Comparison Between Sites",
        x = "Species", y = "Abundance") +
   scale_fill_manual(values = c("BSB" = "tan1", "CDL" = "deepskyblue4")) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "top") +
-  scale_y_continuous(expand = c(0, 0),limits = c(0,6))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(expand = c(0, 0),limits = c(0,6)) + facet_grid(Site~.)+
+  theme_classic()+
+  guides(fill = FALSE)
 ```
 
 ### Abundance
@@ -157,16 +158,26 @@ ggplot(birdcount, aes(x = Site, y = Count, fill=Site)) +
 
 ```
 
+#### Barplot of Abundance by Date
+
 ```{r}
-#Probably wont use this
-ggplot(birdcount, aes(x=Count, fill=Site)) + 
-  geom_histogram(binwidth=1, color="black", position = "dodge")+
-  scale_fill_manual(values = c("BSB" = "tan1", "CDL" = "deepskyblue4"))+
-  labs(x = "Count", y = "Frequency", title = "Frequency of Occurance") +
-  theme_classic()+
-  scale_y_continuous(expand = c(0, 0),limits = c(0,10))+
-  theme(plot.title = element_text(hjust = 0.5))
-  
+bird_zero_date <- birdcount_date
+bird_zero_date <- left_join(bird_zero_date, birdcount_date, by = c("Species", "Site", "Date"))
+
+bird_zero_date$Count.x[is.na(bird_zero_date$Count.x)] <- 0
+
+
+ggplot() +
+  geom_bar(data = birdcount_date, aes(x = Species, y = Count, fill = Site), stat = "identity", position = "dodge", color = "black") +
+  geom_text(data = species_count, aes(x = 0, y = 0, label = Richness)) +
+  labs(title = "Species Abundance Comparison Between Sites",
+       x = "Species", y = "Abundance") +
+  scale_fill_manual(values = c("BSB" = "tan1", "CDL" = "deepskyblue4")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(expand = c(0, 0),limits = c(0,6)) + facet_grid(Site~.)+
+  scale_x_discrete(breaks = NULL)+
+  theme_classic()+ 
+  facet_wrap(Date~., nrow=2)
 ```
 
 ## **Bird RAI**
@@ -182,6 +193,7 @@ birdRAI <- birdcount_date |>
 ```
 
 ```{r}
+#Not the best to represent RAI
 birdRAI |> 
   ggplot(aes(y = RAI, x = Date, color = Site)) + 
   geom_point() + 
