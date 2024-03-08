@@ -93,7 +93,7 @@ data.irga.sum <- data.irga.indiv %>% group_by (Site) %>%
 
 ```{r}
 #BARPLOT
-ggplot(data.irga.sum) + aes(x=Site, y=meanPhoto, fill=Site )+
+photo_bar<-ggplot(data.irga.sum) + aes(x=Site, y=meanPhoto, fill=Site )+
   scale_fill_manual(values=c("tan1","deepskyblue4"), 
                     labels=c('Borrego Basin', 'Clark Lake')) +
   geom_col(alpha=1, position="dodge") + 
@@ -111,7 +111,7 @@ ggplot(data.irga.sum) + aes(x=Site, y=meanPhoto, fill=Site )+
   theme(plot.title = element_text(hjust = 0.5))
 
 #BOXPLOT
-ggplot(data.irga.indiv) + aes(x=Site, y=Photo, fill=Site)+
+photo_box<-ggplot(data.irga.indiv) + aes(x=Site, y=Photo, fill=Site)+
   scale_fill_manual(values=c("tan1","deepskyblue4"),
                     labels=c('Borrego Basin', 'Clark Lake')) +
   geom_boxplot(aes(x=Site, y=Photo, fill=Site)) + 
@@ -126,7 +126,7 @@ ggplot(data.irga.indiv) + aes(x=Site, y=Photo, fill=Site)+
 
 ```{r}
 #BARPLOT
-ggplot(data.irga.sum) + aes(x=Site, y=meanCond, fill=Site )+
+stocon_bar<-ggplot(data.irga.sum) + aes(x=Site, y=meanCond, fill=Site )+
   scale_fill_manual(values=c("tan1","deepskyblue4"), 
                     labels=c('Borrego Basin', 'Clark Lake')) +
   geom_col(alpha=1, position="dodge") + 
@@ -144,7 +144,7 @@ ggplot(data.irga.sum) + aes(x=Site, y=meanCond, fill=Site )+
   theme(plot.title = element_text(hjust = 0.5))
 
 #BOXPLOT
-ggplot(data.irga.indiv) + aes(x=Site, y=Cond, fill=Site)+
+stocon_box<-ggplot(data.irga.indiv) + aes(x=Site, y=Cond, fill=Site)+
   scale_fill_manual(values=c("tan1","deepskyblue4"),
                     labels=c('Borrego Basin', 'Clark Lake')) +
   geom_boxplot(aes(x=Site, y=Cond, fill=Site)) + 
@@ -159,7 +159,7 @@ ggplot(data.irga.indiv) + aes(x=Site, y=Cond, fill=Site)+
 
 ```{r}
 #BARPLOT
-ggplot(data.irga.sum) + aes(x=Site, y=meanWUE, fill=Site )+
+wue_bar<-ggplot(data.irga.sum) + aes(x=Site, y=meanWUE, fill=Site )+
   scale_fill_manual(values=c("tan1","deepskyblue4"), 
                     labels=c('Borrego Basin', 'Clark Lake')) +
   geom_col(alpha=1, position="dodge") + 
@@ -177,7 +177,7 @@ ggplot(data.irga.sum) + aes(x=Site, y=meanWUE, fill=Site )+
   theme(plot.title = element_text(hjust = 0.5))
 
 #BOXPLOT
-ggplot(data.irga.indiv) + aes(x=Site, y=WUE, fill=Site)+
+wue_box<-ggplot(data.irga.indiv) + aes(x=Site, y=WUE, fill=Site)+
   scale_fill_manual(values=c("tan1","deepskyblue4"),
                     labels=c('Borrego Basin', 'Clark Lake')) +
   geom_boxplot(aes(x=Site, y=WUE, fill=Site)) + 
@@ -297,8 +297,8 @@ data.seed.plot <- data.crosshair %>%
 ### Dead vs. Alive
 
 ```{r}
-ggplot(data.cross.plot) + aes(x=Site, y=Count, fill=Status)+
-  scale_fill_manual(values=c("darkgreen","chocolate4"),
+lifestatus<-ggplot(data.cross.plot) + aes(x=Site, y=Count, fill=Status)+
+  scale_fill_manual(values=c("darkgreen","darkorange"),
                     labels=c('Alive', 'Dead')) +
   geom_col(alpha=1, position="dodge") + 
   scale_y_continuous(expand = c(0, 0),limits = c(0,25), 
@@ -313,8 +313,8 @@ ggplot(data.cross.plot) + aes(x=Site, y=Count, fill=Status)+
 ### Seedlings
 
 ```{r}
-ggplot(data.seed.plot) + aes(x=Site, y=sumSeedling)+
-  scale_fill_manual()+
+seedling<-ggplot(data.seed.plot) + aes(x=Site, y=sumSeedling)+
+   scale_fill_manual(values = c("BSB" = "tan1", "CDL" = "deepskyblue4"))+
   geom_col(alpha=1, position="dodge") + 
   scale_y_continuous(expand = c(0, 0),limits = c(0,5), 
                      breaks = pretty_breaks()) +
@@ -432,49 +432,57 @@ data.all <- merge(
 ### Resprouting
 
 ```{r}
-ggplot(data.canopy) + aes(x=Site, y=Resprouting, fill=Site)+
+resprouting<-ggplot(data.canopy) + aes(x=Site, y=Resprouting, fill=Site)+
   scale_fill_manual(values=c("darkorange","darkgreen"),
                     labels=c('Borrego Basin', 'Clark Lake')) +
   geom_boxplot(aes(x=Site, y=Resprouting, fill=Site)) + 
   scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
   xlab("Site")+ylab("Resprouting") + 
-  theme_classic()
+  ggtitle("Mesquite Resprouting at Each Survey Site")+
+   theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 ### Crown Size Density
 
 ```{r}
-ggplot(data.canopy) + aes(x=Site, y=CrownSizeShape, fill=Site)+
+csd<-ggplot(data.canopy) + aes(x=Site, y=CrownSizeShape, fill=Site)+
   scale_fill_manual(values=c("darkorange","darkgreen"),
                     labels=c('Borrego Basin', 'Clark Lake')) +
   geom_boxplot(aes(x=Site, y=CrownSizeShape, fill=Site)) + 
   scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
   xlab("Site")+ylab("Crown Size Shape") +
-  theme_classic()
+  ggtitle("Mesquite Crown Size Density at Each Survey Site")+
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 ### Dead Branches
 
 ```{r}
-ggplot(data.canopy) + aes(x=Site, y=DeadBranches, fill=Site)+
+deadbranch<-ggplot(data.canopy) + aes(x=Site, y=DeadBranches, fill=Site)+
   scale_fill_manual(values=c("darkorange","darkgreen"),
                     labels=c('Borrego Basin', 'Clark Lake')) +
   geom_boxplot(aes(x=Site, y=DeadBranches, fill=Site)) + 
   scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
+  ggtitle("Mesquite Dead Branches at Each Survey Site")+
   xlab("Site")+ylab("Dead Branches") + 
-  theme_classic()
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 ### Crown Foliar Density
 
 ```{r}
-ggplot(data.canopy) + aes(x=Site, y=CrownFoliarDensity, fill=Site)+
+cfd<-ggplot(data.canopy) + aes(x=Site, y=CrownFoliarDensity, fill=Site)+
   scale_fill_manual(values=c("darkorange","darkgreen"),
                     labels=c('Borrego Basin', 'Clark Lake')) +
   geom_boxplot(aes(x=Site, y=CrownFoliarDensity, fill=Site)) + 
   scale_x_discrete(labels=c("1" = "Borrego Basin", "5" = "Clark Lake"))+
+  ggtitle("Mesquite Crown Foliar Density at Each Survey Site")+
   xlab("Site")+ylab("CrownFoliar Density") + 
-  theme_classic()
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 ### All Data
@@ -484,7 +492,7 @@ ggpairs(data.all, columns = c("Photo", "WUE","Cond", "Resprouting", "DeadBranche
         lower = list(continuous = wrap("smooth",
                                        alpha = 0.3,
                                        size = 0.1)),
-        mapping = aes(color = Site.x)) +
+        mapping = aes(color = Site)) +
   scale_fill_manual(values=c('darkorange','darkgreen')) +
   scale_colour_manual(values=c('darkorange','darkgreen'))
 ```
@@ -561,10 +569,4 @@ shapiro.test(x = Density.aov_residuals )
 
 ```
 
-FOCAL PROJECT FOR ADVANCED QUANT
-
-```{r}
-# Kelsey 
-# maybe pca with data 
-
-```
+## 

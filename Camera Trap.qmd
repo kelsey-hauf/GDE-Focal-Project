@@ -196,5 +196,6 @@ ggplot(camera_abundance, aes(x = CameraName, y = XofIndividuals, fill=TrophicLev
         title="Trophic Levels Observed at Both Study Sites")+
   theme(plot.title = element_text(hjust = 0.5))+
   scale_fill_manual(values = c("tan1", "deepskyblue4"))+
-  theme_classic()
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
 ```
