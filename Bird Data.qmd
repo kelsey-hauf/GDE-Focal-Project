@@ -149,12 +149,18 @@ birdSD$seCount <-as.integer(birdSD$seCount)
 
 ```{r}
 ggplot(birdcount, aes(x = Site, y = Count, fill=Site)) +
+  
   geom_bar(stat = "identity") +
+  
   labs(x = "Site", y = "Abundance", title = "Species Abundance by Site") +
+  
   scale_fill_manual(values = c("BSB" = "tan1", "CDL" = "deepskyblue4"))+
+  
   scale_y_continuous(expand = c(0, 0),limits = c(0,35)) +
+  
   theme_classic()+
-    theme(plot.title = element_text(hjust = 0.5))
+    
+  theme(plot.title = element_text(hjust = 0.5))
 
 ```
 
@@ -168,15 +174,24 @@ bird_zero_date$Count.x[is.na(bird_zero_date$Count.x)] <- 0
 
 
 ggplot() +
-  geom_bar(data = birdcount_date, aes(x = Species, y = Count, fill = Site), stat = "identity", position = "dodge", color = "black") +
+  geom_bar(data = birdcount_date, aes(x = Species, y = Count, fill = Site), stat = "identity",   position = "dodge", color = "black") +
+  
   geom_text(data = species_count, aes(x = 0, y = 0, label = Richness)) +
   labs(title = "Species Abundance Comparison Between Sites",
        x = "Species", y = "Abundance") +
+  
   scale_fill_manual(values = c("BSB" = "tan1", "CDL" = "deepskyblue4")) +
+  
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  scale_y_continuous(expand = c(0, 0),limits = c(0,6)) + facet_grid(Site~.)+
+ 
+  scale_y_continuous(expand = c(0, 0),limits = c(0,6)) + 
+  
+  facet_grid(Site~.)+
+  
   scale_x_discrete(breaks = NULL)+
+ 
   theme_classic()+ 
+ 
   facet_wrap(Date~., nrow=2)
 ```
 
