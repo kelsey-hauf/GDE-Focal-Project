@@ -16,7 +16,7 @@ library(tidyverse)
 library(vegan)
 ```
 
-### Load Data
+## Load Data
 
 ```{r}
 #Load csv files
@@ -34,9 +34,7 @@ bird$Date<-as.Date(bird$Date, "%m/%d/%y")
 
 ```
 
-## Analysis
-
-### Species Richness
+## Species Richness
 
 ```{r}
 #Summarize count of each bird species found at each site
@@ -54,21 +52,57 @@ birdcount_date <- bird %>%
 
 ```
 
-#### Log Transformation
+## Log Transformation
 
 ```{r}
+#Summarize count of each bird species found at each survey point
+birdcount_bysite <- bird %>%
+  group_by(SiteID, Species) %>%
+  summarise(Count = n()) %>%
+  ungroup()
+
+#These lines of code add 0 to species that were observed in one siteID but not the others
+bird_zero_bysite <- expand.grid(Species = unique(birdcount_bysite$Species), SiteID = unique(birdcount_bysite$SiteID))
+bird_zero_bysite <- left_join(bird_zero_bysite, birdcount_bysite, by = c("Species", "SiteID"))
+bird_zero_bysite$Count[is.na(bird_zero_bysite$Count)] <- 0
+
+bird_zero_bysite$Countln <- log((bird_zero_bysite$Count)+1)
+```
+
+## Statistical Analysis
+
+```{r}
+#Abundance per species during each site visit
+birdcount_byvisit <- bird %>%
+  group_by(SiteID, Species, Date) %>%
+  summarise(Count = n()) %>%
+  ungroup()
+
+#Average bird count per survey point
+averages <- birdcount_byvisit %>%
+  group_by(SiteID) %>%
+  summarise(across(where(is.numeric), mean, na.rm = TRUE))
+
 
 ```
 
-#### Statistical Analysis
+## Graph Avg counts
 
 ```{r}
-
+ggplot(averages, aes(x = SiteID, y = Countln, fill = ifelse(grepl("^BSB", SiteID), "BSB", "CDL"))) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("BSB" = "tan1", "CDL" = "deepskyblue4")) +
+  labs(x = "Site", y = "Abundance (log)", title = "Species Abundance by Site") +
+  scale_y_continuous(expand = c(0, 0),limits = c(0,0.5)) +
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))+
+  guides(fill = FALSE)
 ```
 
-#### Shannon-Diversity Index
+## Shannon-Diversity Index
 
 ```{r}
+#By Site
 birdcount2 <- birdcount %>%
   group_by(Site) %>%
   mutate(Relative_Abundance = Count / sum(Count))
@@ -76,9 +110,41 @@ birdcount2 <- birdcount %>%
 shannon_index <- birdcount2 %>%
   group_by(Site) %>%
   summarize(Shannon_Index = -sum(Relative_Abundance * log(Relative_Abundance)))
+
+#By Survey Point
+birdcount2 <- birdcount_byvisit %>%
+  group_by(SiteID, Date) %>%
+  mutate(Relative_Abundance = Count / sum(Count))
+
+shannon_index <- birdcount2 %>%
+  group_by(SiteID, Date) %>%
+  summarize(Shannon_Index = -sum(Relative_Abundance * log(Relative_Abundance)))
 ```
 
-#### Barplot of Species Abundance
+## Barplot of Diversity by Site ID
+
+```{r}
+#Graph by total in each survey point
+ggplot() +
+  geom_bar(data = shannon_index, aes(x = SiteID, y = Shannon_Index, fill = ifelse(grepl("^BSB", SiteID), "BSB", "CDL")), stat = "identity", position = "dodge", color = "black") +
+  geom_text(data = species_count, aes(x = 0, y = 0, label = Richness)) +
+  labs(title = "Species Diversity Comparison Between Survey Points",
+       x = "Survey Point", y = "Shannon-Diverity Index") +
+  scale_fill_manual(values = c("BSB" = "tan1", "CDL" = "deepskyblue4")) +
+  theme(plot.title = element_text(hjust = 0.5))+
+  scale_y_continuous(expand = c(0, 0),limits = c(0,3)) + 
+  theme_classic()+
+  guides(fill = FALSE)
+
+ggplot(shannon_index, aes(x=Date, y=Shannon_Index, group=SiteID, color=SiteID)) + 
+  geom_line()
+
+ggplot(shannon_index, aes(x = Date, y = Shannon_Index, fill = SiteID)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.5))+
+  geom_line()
+```
+
+## Barplot of Species Abundance
 
 ```{r}
 #These lines of code add 0 to species that were observed in one site but not the other
@@ -96,13 +162,13 @@ ggplot() +
   labs(title = "Species Abundance Comparison Between Sites",
        x = "Species", y = "Abundance") +
   scale_fill_manual(values = c("BSB" = "tan1", "CDL" = "deepskyblue4")) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+ theme(plot.title = element_text(hjust = 0.5))+
   scale_y_continuous(expand = c(0, 0),limits = c(0,6)) + facet_grid(Site~.)+
   theme_classic()+
   guides(fill = FALSE)
 ```
 
-### Abundance
+## Abundance
 
 ```{r}
 birdtotal <- bird %>%
@@ -111,7 +177,7 @@ birdtotal <- bird %>%
   ungroup()
 ```
 
-#### T-Test
+## T-Test
 
 ```{r}
 # Subset data for each site
@@ -122,13 +188,13 @@ CDL_data <- birdcount$Count[birdcount$Site == "CDL"]
 t.test(BSB_data, CDL_data)
 ```
 
-#### Relative Species Abundance
+## Relative Species Abundance
 
 ```{r}
 birdtotal
 ```
 
-#### Calculate Mean and Standard Error
+## Calculate Mean and Standard Error
 
 ```{r}
 #Calculate mean and standard error
@@ -145,7 +211,7 @@ birdSD$seCount <-as.integer(birdSD$seCount)
 
 ```
 
-#### Barplot of Abundance
+## Barplot of Abundance
 
 ```{r}
 ggplot(birdcount, aes(x = Site, y = Count, fill=Site)) +
@@ -164,7 +230,7 @@ ggplot(birdcount, aes(x = Site, y = Count, fill=Site)) +
 
 ```
 
-#### Barplot of Abundance by Date
+## Barplot of Abundance by Date
 
 ```{r}
 bird_zero_date <- birdcount_date
@@ -195,7 +261,7 @@ ggplot() +
   facet_wrap(Date~., nrow=2)
 ```
 
-#### Migratory vs Resident
+## Migratory vs Resident
 
 ```{r}
 
