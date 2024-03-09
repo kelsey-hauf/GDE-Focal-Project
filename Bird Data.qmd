@@ -70,6 +70,12 @@ bird_zero<- bird_zero %>%
   select(Species, SiteID, Count, Countln)
 ```
 
+# \*\*Abundance
+
+```{r}
+
+```
+
 ## SPECIES RICHNESS
 
 ### By Site
