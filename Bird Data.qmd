@@ -41,7 +41,7 @@ bird$Date<-as.Date(bird$Date, "%m/%d/%y")
 ```{r}
 #Summarize count of each bird species found at each site
 birdcount <- bird %>%
-  group_by(Site, Species) %>%
+  group_by(Site, Species, Resident) %>%
   summarise(Count = n()) %>%
   ungroup()
 
@@ -193,6 +193,27 @@ ggplot() +
   theme_classic()+ 
  
   facet_wrap(Date~., nrow=2)
+```
+
+#### Migratory vs Resident
+
+```{r}
+
+migratory <- bird %>%
+  group_by(Resident, Site) %>%
+  summarise(Count = n())
+
+ggplot(migratory, aes(x = Resident, y = Count, fill=Site)) +
+  geom_bar(stat = "identity", position="dodge") +
+  labs(x="Residency Status", y = "Abundance", 
+       title = "Resident vs Migratory Birds by Site") +
+  scale_fill_manual(values = c("BSB" = "tan1", "CDL" = "deepskyblue4"))+
+  scale_x_discrete(labels = c("No" = "Migratory", "Yes" = "Resident"))+
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 25), 
+                     labels = scales::number_format(scale = 1, accuracy = 1)) +
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5))
+
 ```
 
 ## **Bird RAI**
