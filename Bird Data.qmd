@@ -49,7 +49,7 @@ birdcount <- bird %>%
 
 ```
 
-### Presence/Absence 
+### Presence/Absence
 
 ```{r}
 #These lines of code add 0 to species that were observed in one siteID but not the others
@@ -58,6 +58,11 @@ bird_zero <- expand.grid(Species = unique(birdcount$Species), SiteID = unique(bi
 bird_zero <- left_join(bird_zero, birdcount, by = c("Species", "SiteID"))
 #If bird count is NA, replace with 0
 bird_zero$Count[is.na(bird_zero$Count)] <- 0
+
+species_count <- bird_zero %>%
+  group_by(Site) %>%
+  summarize(Richness = n_distinct(Species)) %>%
+  filter(Site=="BSB"| Site=="CDL")
 ```
 
 ### Log Transformation
@@ -67,13 +72,22 @@ bird_zero$Count[is.na(bird_zero$Count)] <- 0
 bird_zero$Countln <- log((bird_zero$Count)+1)
 #Only keep specified columns
 bird_zero<- bird_zero %>%
-  select(Species, SiteID, Count, Countln)
+  select(Species, SiteID, Site, Count, Countln)
 ```
 
 # \*\*Abundance
 
 ```{r}
-
+ggplot() +
+  geom_bar(data = bird_zero, aes(x = Species, y = Count, fill = Site), stat = "identity", position = "dodge", color = "black") +
+  geom_text(data = species_count, aes(x = 0, y = 0, label = Richness)) +
+  labs(title = "Species Abundance Comparison Between Sites",
+       x = "Species", y = "Abundance") +
+  scale_fill_manual(values = c("BSB" = "tan1", "CDL" = "deepskyblue4")) +
+ theme(plot.title = element_text(hjust = 0.5))+
+  scale_y_continuous(expand = c(0, 0),limits = c(0,6)) + facet_grid(Site~.)+
+  theme_classic()+
+  guides(fill = FALSE)
 ```
 
 ## SPECIES RICHNESS
