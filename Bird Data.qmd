@@ -78,8 +78,24 @@ bird_zero<- bird_zero %>%
 # \*\*Abundance
 
 ```{r}
+#These lines of code add 0 to species that were observed in one site but not the other
+bird_zero_abundance <- expand.grid(Species = unique(birdcount$Species), Site = unique(birdcount$Site))
+bird_zero_abundance <- left_join(bird_zero_abundance, birdcount, by = c("Species", "Site"))
+bird_zero_abundance <- bird_zero_abundance %>%
+  select(Species, Site, Count)
+bird_zero_abundance$Count[is.na(bird_zero_abundance$Count)] <- 0
+
+bird_zero_abundance <- bird_zero_abundance %>%
+  group_by(Species, Site) %>%
+  summarize(Count = sum(Count))
+
+species_count <- bird_zero_abundance %>%
+  group_by(Site) %>%
+  summarize(Richness = n_distinct(Species))
+
+
 ggplot() +
-  geom_bar(data = bird_zero, aes(x = Species, y = Count, fill = Site), stat = "identity", position = "dodge", color = "black") +
+  geom_bar(data = bird_zero_abundance, aes(x = Species, y = Count, fill = Site), stat = "identity",  color = "black") +
   geom_text(data = species_count, aes(x = 0, y = 0, label = Richness)) +
   labs(title = "Species Abundance Comparison Between Sites",
        x = "Species", y = "Abundance") +
